@@ -1,8 +1,8 @@
 <?php
 
-namespace NoriaLabs\Mail;
+namespace NoriaLabs\Notify;
 
-use NoriaLabs\Mail\Exceptions\MailException;
+use NoriaLabs\Notify\Exceptions\NotifyException;
 
 class WebhookVerifier
 {
@@ -19,19 +19,19 @@ class WebhookVerifier
         [$timestamp, $provided] = $this->parse($signature);
 
         if (abs(($now ?? time()) - $timestamp) > $this->toleranceSeconds) {
-            throw new MailException('validation_error', 400, 'Signature timestamp is outside the tolerance window');
+            throw new NotifyException('validation_error', 400, 'Signature timestamp is outside the tolerance window');
         }
 
         $expected = hash_hmac('sha256', "{$timestamp}.{$payload}", $this->secret);
 
         if (! hash_equals($expected, $provided)) {
-            throw new MailException('unauthorized', 401, 'Invalid webhook signature');
+            throw new NotifyException('unauthorized', 401, 'Invalid webhook signature');
         }
 
         $event = json_decode($payload, true);
 
         if (! is_array($event)) {
-            throw new MailException('validation_error', 400, 'Webhook payload is not a JSON object');
+            throw new NotifyException('validation_error', 400, 'Webhook payload is not a JSON object');
         }
 
         /** @var array<string, mixed> $event */
@@ -53,7 +53,7 @@ class WebhookVerifier
         }
 
         if (! isset($parts['t'], $parts['v1']) || ! ctype_digit($parts['t'])) {
-            throw new MailException('validation_error', 400, 'Malformed Noria-Signature header');
+            throw new NotifyException('validation_error', 400, 'Malformed Noria-Signature header');
         }
 
         return [(int) $parts['t'], $parts['v1']];

@@ -1,8 +1,8 @@
 <?php
 
-namespace NoriaLabs\Mail\Tests;
+namespace NoriaLabs\Notify\Tests;
 
-use NoriaLabs\Mail\Providers\MailServiceProvider;
+use NoriaLabs\Notify\Providers\NotifyServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
@@ -12,17 +12,17 @@ abstract class TestCase extends Orchestra
      */
     protected function getPackageProviders($app): array
     {
-        return [MailServiceProvider::class];
+        return [NotifyServiceProvider::class];
     }
 
     protected function defineEnvironment($app): void
     {
-        $app['config']->set('noria-mail.url', 'https://mail.noria.test');
-        $app['config']->set('noria-mail.key', 'nm_test_abcdefghijklmnopqrstuvwx');
-        $app['config']->set('noria-mail.webhook_secret', 'whsec_testsecret');
+        $app['config']->set('noria-notify.url', 'https://notify.noria.test');
+        $app['config']->set('noria-notify.key', 'nm_test_abcdefghijklmnopqrstuvwx');
+        $app['config']->set('noria-notify.webhook_secret', 'whsec_testsecret');
 
-        $app['config']->set('mail.default', 'noria');
-        $app['config']->set('mail.mailers.noria', ['transport' => 'noria']);
+        $app['config']->set('mail.default', 'notify');
+        $app['config']->set('mail.mailers.notify', ['transport' => 'notify']);
         $app['config']->set('mail.from', ['address' => 'hello@example.test', 'name' => 'Noria']);
     }
 }

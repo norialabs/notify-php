@@ -2,12 +2,16 @@
 
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Request;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-use NoriaLabs\Mail\Exceptions\MailException;
-use NoriaLabs\Mail\MailClient;
-use NoriaLabs\Mail\MailTransport;
-use NoriaLabs\Mail\WebhookVerifier;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
+use NoriaLabs\Notify\Exceptions\NotifyException;
+use NoriaLabs\Notify\Notifications\SmsMessage;
+use NoriaLabs\Notify\Notify;
+use NoriaLabs\Notify\NotifyTransport;
+use NoriaLabs\Notify\WebhookVerifier;
 
 function queued(array $overrides = []): array
 {
@@ -24,9 +28,9 @@ function sentPayload(): array
 }
 
 it('registers the transport, client and verifier', function () {
-    expect(app(MailClient::class))->toBeInstanceOf(MailClient::class)
+    expect(app(Notify::class))->toBeInstanceOf(Notify::class)
         ->and(app(WebhookVerifier::class))->toBeInstanceOf(WebhookVerifier::class)
-        ->and((string) Mail::mailer('noria')->getSymfonyTransport())->toBe('noria');
+        ->and((string) Mail::mailer('notify')->getSymfonyTransport())->toBe('noria');
 });
 
 it('sends a Laravel mailable through the API with html and text parts', function () {
@@ -56,7 +60,7 @@ it('authenticates with the configured key and base url', function () {
 
     Mail::raw('body', fn ($message) => $message->to('a@example.test')->subject('s'));
 
-    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://mail.noria.test/v1/emails'
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://notify.noria.test/v1/emails'
         && $request->hasHeader('Authorization', 'Bearer nm_test_abcdefghijklmnopqrstuvwx'));
 });
 
@@ -106,8 +110,8 @@ it('sends through a stored template when the template header is present', functi
 
     Mail::raw('ignored', function ($message) {
         $message->to('a@example.test')->subject('s');
-        $message->getHeaders()->addTextHeader(MailTransport::TEMPLATE_HEADER, 'welcome');
-        $message->getHeaders()->addTextHeader(MailTransport::VARIABLES_HEADER, json_encode(['name' => 'Gitonga']));
+        $message->getHeaders()->addTextHeader(NotifyTransport::TEMPLATE_HEADER, 'welcome');
+        $message->getHeaders()->addTextHeader(NotifyTransport::VARIABLES_HEADER, json_encode(['name' => 'Gitonga']));
     });
 
     $payload = sentPayload();
@@ -121,7 +125,7 @@ it('passes an idempotency key as a header rather than in the body', function () 
 
     Mail::raw('body', function ($message) {
         $message->to('a@example.test')->subject('s');
-        $message->getHeaders()->addTextHeader(MailTransport::IDEMPOTENCY_HEADER, 'signin-42');
+        $message->getHeaders()->addTextHeader(NotifyTransport::IDEMPOTENCY_HEADER, 'signin-42');
     });
 
     Http::assertSent(fn (Request $request): bool => $request->hasHeader('Idempotency-Key', 'signin-42'));
@@ -142,14 +146,14 @@ it('still raises other API errors', function () {
     ], 403)]);
 
     Mail::raw('body', fn ($message) => $message->to('a@example.test')->subject('s'));
-})->throws(MailException::class, 'not verified');
+})->throws(NotifyException::class, 'not verified');
 
 it('retries a 503 and then succeeds', function () {
     Http::fakeSequence()
         ->push(['error' => ['code' => 'internal_error', 'message' => 'down']], 503)
         ->push(queued(), 202);
 
-    $result = app(MailClient::class)->send(['from' => 'a@b.test', 'to' => 'c@d.test', 'subject' => 's', 'text' => 't']);
+    $result = app(Notify::class)->emails()->send(['from' => 'a@b.test', 'to' => 'c@d.test', 'subject' => 's', 'text' => 't']);
 
     expect($result['id'])->toBe('msg_01test');
     Http::assertSentCount(2);
@@ -158,37 +162,45 @@ it('retries a 503 and then succeeds', function () {
 it('does not retry a quota rejection', function () {
     Http::fake(['*' => Http::response(['error' => ['code' => 'quota_exceeded', 'message' => 'out']], 429)]);
 
-    expect(fn () => app(MailClient::class)->send(['from' => 'a@b.test', 'to' => 'c@d.test', 'subject' => 's', 'text' => 't']))
-        ->toThrow(MailException::class);
+    expect(fn () => app(Notify::class)->emails()->send(['from' => 'a@b.test', 'to' => 'c@d.test', 'subject' => 's', 'text' => 't']))
+        ->toThrow(NotifyException::class);
 
     Http::assertSentCount(1);
 });
 
 it('exposes the rest of the API surface', function () {
     Http::fake(['*' => Http::response(['object' => 'list', 'data' => []], 200)]);
-    $client = app(MailClient::class);
+    $notify = app(Notify::class);
 
-    $client->addDomain('example.test');
-    $client->upsertTemplate(['slug' => 'welcome', 'subject' => 's', 'text' => 't']);
-    $client->suppress('a@b.test', 'bounce');
-    $client->addWebhookEndpoint('https://hook.test', ['delivered']);
-    $client->requeue('msg_1');
+    $notify->sms()->send(['from' => 'NORIA', 'to' => '0712000001', 'text' => 'hi']);
+    $notify->sms()->sendBatch([['to' => '0712000002', 'text' => 'hi']]);
+    $notify->domains()->create('example.test');
+    $notify->senders()->create('NORIA');
+    $notify->templates()->upsert(['slug' => 'welcome', 'subject' => 's', 'text' => 't']);
+    $notify->suppressions()->add('0712000003', 'sms', 'unsubscribe');
+    $notify->webhooks()->create('https://hook.test', ['delivered']);
+    $notify->messages()->requeue('msg_1');
+    $notify->messages()->events('msg_1');
 
     $paths = collect(Http::recorded())->map(fn (array $pair): string => $pair[0]->method().' '.parse_url($pair[0]->url(), PHP_URL_PATH));
 
     expect($paths->all())->toBe([
+        'POST /v1/sms',
+        'POST /v1/sms/batch',
         'POST /v1/domains',
+        'POST /v1/senders',
         'POST /v1/templates',
         'POST /v1/suppressions',
         'POST /v1/webhook-endpoints',
-        'POST /v1/emails/msg_1/requeue',
+        'POST /v1/messages/msg_1/requeue',
+        'GET /v1/messages/msg_1/events',
     ]);
 });
 
-it('reports whether an address is suppressed', function () {
-    Http::fake(['*' => Http::response(['object' => 'list', 'data' => [['email' => 'a@b.test']]], 200)]);
+it('reports whether a destination is suppressed', function () {
+    Http::fake(['*' => Http::response(['object' => 'list', 'data' => [['destination' => 'a@b.test']]], 200)]);
 
-    expect(app(MailClient::class)->isSuppressed('a@b.test'))->toBeTrue();
+    expect(app(Notify::class)->suppressions()->has('a@b.test'))->toBeTrue();
 });
 
 it('verifies a webhook signature and returns the event', function () {
@@ -207,17 +219,92 @@ it('rejects a tampered webhook body, a stale timestamp and a malformed header', 
     $signature = 't='.$timestamp.',v1='.hash_hmac('sha256', "{$timestamp}.{$payload}", 'whsec_testsecret');
 
     expect(fn () => $verifier->verify(str_replace('delivered', 'bounced', $payload), $signature))
-        ->toThrow(MailException::class, 'Invalid webhook signature');
+        ->toThrow(NotifyException::class, 'Invalid webhook signature');
 
     $stale = time() - 3600;
     $staleSignature = 't='.$stale.',v1='.hash_hmac('sha256', "{$stale}.{$payload}", 'whsec_testsecret');
     expect(fn () => $verifier->verify($payload, $staleSignature))
-        ->toThrow(MailException::class, 'outside the tolerance window');
+        ->toThrow(NotifyException::class, 'outside the tolerance window');
 
     expect(fn () => $verifier->verify($payload, 'nonsense'))
-        ->toThrow(MailException::class, 'Malformed Noria-Signature header');
+        ->toThrow(NotifyException::class, 'Malformed Noria-Signature header');
 });
 
 it('requires an api key', function () {
-    new MailClient(app(Factory::class), '');
-})->throws(MailException::class, 'API key is required');
+    new Notify(app(Factory::class), '');
+})->throws(NotifyException::class, 'API key is required');
+
+class OtpIssued extends Notification
+{
+    public function via(mixed $notifiable): array
+    {
+        return ['notify-sms'];
+    }
+
+    public function toNotifySms(mixed $notifiable): SmsMessage
+    {
+        return SmsMessage::make('Your code is 482913')->sender('NORIA')->tags(['kind' => 'otp']);
+    }
+}
+
+class PlainOtp extends Notification
+{
+    public function via(mixed $notifiable): array
+    {
+        return ['notify-sms'];
+    }
+
+    public function toNotifySms(mixed $notifiable): string
+    {
+        return 'Your code is 000111';
+    }
+}
+
+class Subscriber
+{
+    use Notifiable;
+
+    public function routeNotificationForNotifySms(): string
+    {
+        return '0712000099';
+    }
+}
+
+it('sends an sms notification through the notify-sms channel', function () {
+    Http::fake(['*' => Http::response(['id' => 'msg_01sms', 'object' => 'sms', 'status' => 'queued'], 202)]);
+
+    NotificationFacade::send([new Subscriber], new OtpIssued);
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://notify.noria.test/v1/sms');
+
+    expect(sentPayload())->toBe([
+        'to' => '0712000099',
+        'from' => 'NORIA',
+        'text' => 'Your code is 482913',
+        'tags' => ['kind' => 'otp'],
+    ]);
+});
+
+it('accepts a plain string from a notification', function () {
+    Http::fake(['*' => Http::response(['id' => 'msg_01sms', 'object' => 'sms', 'status' => 'queued'], 202)]);
+
+    NotificationFacade::send([new Subscriber], new PlainOtp);
+
+    expect(sentPayload())->toBe(['to' => '0712000099', 'text' => 'Your code is 000111']);
+});
+
+it('swallows a suppressed number so one opt-out cannot break a queued notification', function () {
+    Http::fake(['*' => Http::response([
+        'error' => ['code' => 'suppressed_recipient', 'message' => 'opted out'],
+    ], 422)]);
+
+    NotificationFacade::send([new Subscriber], new OtpIssued);
+})->throwsNoExceptions();
+
+it('builds an sms template payload without a body', function () {
+    expect(SmsMessage::make()->template('otp', ['code' => '482913'])->payload('254712000001'))->toBe([
+        'to' => '254712000001',
+        'template' => 'otp',
+        'variables' => ['code' => '482913'],
+    ]);
+});

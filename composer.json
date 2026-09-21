@@ -1,20 +1,23 @@
 {
-    "name": "norialabs/mail",
-    "description": "Laravel SDK and mail transport for Noria Mail: send transactional email through one internal service instead of wiring SES into every product.",
+    "name": "norialabs/notify",
+    "description": "Laravel SDK, mail transport and SMS notification channel for Noria Notify: send transactional email and SMS through one internal service instead of wiring a provider into every product.",
     "type": "library",
     "keywords": [
         "laravel",
         "mail",
         "email",
+        "sms",
+        "notifications",
         "transactional",
         "ses",
+        "onfon",
         "noria"
     ],
     "license": "MIT",
-    "homepage": "https://github.com/norialabs/mail",
+    "homepage": "https://github.com/norialabs/notify",
     "support": {
-        "issues": "https://github.com/norialabs/mail/issues",
-        "source": "https://github.com/norialabs/mail"
+        "issues": "https://github.com/norialabs/notify/issues",
+        "source": "https://github.com/norialabs/notify"
     },
     "authors": [
         {
@@ -27,6 +30,7 @@
         "php": "^8.3",
         "illuminate/http": "^11.0|^12.0|^13.0",
         "illuminate/mail": "^11.0|^12.0|^13.0",
+        "illuminate/notifications": "^11.0|^12.0|^13.0",
         "illuminate/support": "^11.0|^12.0|^13.0",
         "symfony/mailer": "^7.0|^8.0"
     },
@@ -38,12 +42,12 @@
     },
     "autoload": {
         "psr-4": {
-            "NoriaLabs\\Mail\\": "src/"
+            "NoriaLabs\\Notify\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "NoriaLabs\\Mail\\Tests\\": "tests/"
+            "NoriaLabs\\Notify\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -61,10 +65,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "NoriaLabs\\Mail\\Providers\\MailServiceProvider"
+                "NoriaLabs\\Notify\\Providers\\NotifyServiceProvider"
             ],
             "aliases": {
-                "NoriaMail": "NoriaLabs\\Mail\\Facades\\NoriaMail"
+                "Notify": "NoriaLabs\\Notify\\Facades\\Notify"
             }
         }
     },

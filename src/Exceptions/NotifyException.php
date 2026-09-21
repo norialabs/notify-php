@@ -1,11 +1,11 @@
 <?php
 
-namespace NoriaLabs\Mail\Exceptions;
+namespace NoriaLabs\Notify\Exceptions;
 
 use RuntimeException;
 use Throwable;
 
-class MailException extends RuntimeException
+class NotifyException extends RuntimeException
 {
     /**
      * @param  array<array-key, mixed>|null  $details
@@ -54,7 +54,13 @@ class MailException extends RuntimeException
 
     public function isRetryable(): bool
     {
-        if (in_array($this->errorCode, ['quota_exceeded', 'suppressed_recipient', 'domain_not_verified'], true)) {
+        if (in_array($this->errorCode, [
+            'quota_exceeded',
+            'suppressed_recipient',
+            'domain_not_verified',
+            'sender_not_approved',
+            'message_too_long',
+        ], true)) {
             return false;
         }
 
