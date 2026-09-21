@@ -52,7 +52,7 @@ class SendServiceProvider extends ServiceProvider implements DeferrableProvider
             __DIR__.'/../../config/noria-send.php' => $this->app->configPath('noria-send.php'),
         ], 'noria-send-config');
 
-        Mail::extend('send', function (array $config): SendTransport {
+        Mail::extend('noria', function (array $config): SendTransport {
             $client = isset($config['key']) && is_string($config['key']) && $config['key'] !== ''
                 ? new Send(
                     $this->app->make(Factory::class),

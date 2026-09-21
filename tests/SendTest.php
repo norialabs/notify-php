@@ -30,7 +30,7 @@ function sentPayload(): array
 it('registers the transport, client and verifier', function () {
     expect(app(Send::class))->toBeInstanceOf(Send::class)
         ->and(app(WebhookVerifier::class))->toBeInstanceOf(WebhookVerifier::class)
-        ->and((string) Mail::mailer('send')->getSymfonyTransport())->toBe('noria');
+        ->and((string) Mail::mailer('noria')->getSymfonyTransport())->toBe('noria');
 });
 
 it('sends a Laravel mailable through the API with html and text parts', function () {

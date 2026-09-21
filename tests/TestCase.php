@@ -21,8 +21,8 @@ abstract class TestCase extends Orchestra
         $app['config']->set('noria-send.key', 'nm_test_abcdefghijklmnopqrstuvwx');
         $app['config']->set('noria-send.webhook_secret', 'whsec_testsecret');
 
-        $app['config']->set('mail.default', 'send');
-        $app['config']->set('mail.mailers.send', ['transport' => 'send']);
+        $app['config']->set('mail.default', 'noria');
+        $app['config']->set('mail.mailers.noria', ['transport' => 'noria']);
         $app['config']->set('mail.from', ['address' => 'hello@example.test', 'name' => 'Noria']);
     }
 }

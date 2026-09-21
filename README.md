@@ -14,17 +14,30 @@ This repository is a read-only split of `sdks/php` in
 is force-pushed on every release and anything committed here is lost.
 
 ```env
-MAIL_MAILER=send
+MAIL_MAILER=noria
 NORIA_SEND_KEY=nm_live_…
 ```
 
 `NORIA_SEND_URL` defaults to `https://send.noria.co.ke`; set it to reach a local service or
 another instance.
 
+Everything else the package reads, with its default:
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `NORIA_SEND_TIMEOUT` | `15` | Seconds to wait on a single HTTP request |
+| `NORIA_SEND_RETRIES` | `2` | Retries after a connection failure or a 5xx |
+| `NORIA_SEND_FAIL_ON_SUPPRESSED` | `false` | Whether sending to a suppressed address throws |
+| `NORIA_SEND_WEBHOOK_SECRET` | none | Secret shown once when the webhook endpoint was created |
+| `NORIA_SEND_WEBHOOK_TOLERANCE` | `300` | Seconds a webhook signature stays valid |
+
+Sending never blocks on the provider, so the timeout covers the enqueue call rather than
+delivery, and two retries are about a service restart rather than a bounce.
+
 ```php
 // config/mail.php
 'mailers' => [
-    'send' => ['transport' => 'send'],
+    'noria' => ['transport' => 'noria'],
 ],
 ```
 
