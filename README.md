@@ -15,7 +15,7 @@ is force-pushed on every release and anything committed here is lost.
 
 ```env
 MAIL_MAILER=notify
-NORIA_NOTIFY_URL=https://notify.noria.internal
+NORIA_NOTIFY_URL=https://send.noria.internal
 NORIA_NOTIFY_KEY=nm_live_…
 ```
 
