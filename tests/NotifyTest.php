@@ -230,6 +230,14 @@ it('rejects a tampered webhook body, a stale timestamp and a malformed header', 
         ->toThrow(NotifyException::class, 'Malformed Noria-Signature header');
 });
 
+it('talks to production unless told otherwise', function () {
+    Http::fake(['*' => Http::response(['object' => 'list', 'data' => []], 200)]);
+
+    (new Notify(app(Factory::class), 'nm_live_x'))->messages()->list();
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://send.noria.co.ke/v1/messages');
+});
+
 it('requires an api key', function () {
     new Notify(app(Factory::class), '');
 })->throws(NotifyException::class, 'API key is required');

@@ -15,9 +15,11 @@ is force-pushed on every release and anything committed here is lost.
 
 ```env
 MAIL_MAILER=notify
-NORIA_NOTIFY_URL=https://send.noria.internal
 NORIA_NOTIFY_KEY=nm_live_…
 ```
+
+`NORIA_NOTIFY_URL` defaults to `https://send.noria.co.ke`; set it to reach a local service or
+another instance.
 
 ```php
 // config/mail.php

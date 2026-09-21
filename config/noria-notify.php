@@ -1,7 +1,9 @@
 <?php
 
+use NoriaLabs\Notify\Notify;
+
 return [
-    'url' => env('NORIA_NOTIFY_URL', 'http://localhost:4800'),
+    'url' => env('NORIA_NOTIFY_URL', Notify::DEFAULT_BASE_URL),
 
     'key' => env('NORIA_NOTIFY_KEY', ''),
 

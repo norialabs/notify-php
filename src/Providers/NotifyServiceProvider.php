@@ -57,7 +57,7 @@ class NotifyServiceProvider extends ServiceProvider implements DeferrableProvide
                 ? new Notify(
                     $this->app->make(Factory::class),
                     $config['key'],
-                    is_string($config['url'] ?? null) ? $config['url'] : 'http://localhost:4800',
+                    is_string($config['url'] ?? null) ? $config['url'] : Notify::DEFAULT_BASE_URL,
                 )
                 : $this->app->make(Notify::class);
 

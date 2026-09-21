@@ -17,10 +17,12 @@ use NoriaLabs\Notify\Resources\Webhooks;
 
 class Notify
 {
+    public const DEFAULT_BASE_URL = 'https://send.noria.co.ke';
+
     public function __construct(
         protected readonly Factory $http,
         protected readonly string $apiKey,
-        protected readonly string $baseUrl = 'http://localhost:4800',
+        protected readonly string $baseUrl = self::DEFAULT_BASE_URL,
         protected readonly int $timeout = 15,
         protected readonly int $retries = 2,
     ) {
