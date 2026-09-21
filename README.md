@@ -140,9 +140,10 @@ Set `NORIA_NOTIFY_WEBHOOK_SECRET` to the secret shown once when the endpoint was
 
 ## Requirements
 
-PHP 8.3 or newer, and Laravel 11, 12 or 13. PHP 8.2 is not supported: its security window
-closes on 31 December 2026 and Laravel 13 already requires 8.3, so an 8.2 application could
-never run the current framework anyway. `^8.3` admits 8.6 when it arrives.
+PHP 8.3 or newer, and **Laravel 13**. Laravel 11 and 12 were dropped: every Noria product is
+moving to 13, and supporting three majors meant the test suite ran against 12 and never against
+the version we actually ship on — which is how a Laravel 13 container-binding change sat
+unnoticed. `^8.3` is the framework's own floor and admits 8.6 when it arrives.
 
 ## Tests
 

@@ -64,7 +64,10 @@ class NotifyServiceProvider extends ServiceProvider implements DeferrableProvide
             return new NotifyTransport($client, (bool) ($config['fail_on_suppressed'] ?? false));
         });
 
-        Notification::extend('notify-sms', fn () => $this->app->make(NotifySmsChannel::class));
+        // The channel manager binds this closure to itself, so $this inside it is the manager,
+        // not the provider, and from Laravel 13 the manager has no $app property.
+        $app = $this->app;
+        Notification::extend('notify-sms', fn (): NotifySmsChannel => $app->make(NotifySmsChannel::class));
     }
 
     /**
