@@ -1,6 +1,6 @@
-# Noria Notify for Laravel
+# Noria Send for Laravel
 
-Send transactional email and SMS through [Noria Notify](https://github.com/norialabs/notify)
+Send transactional email and SMS through [Noria Send](https://github.com/norialabs/notify)
 instead of wiring SES and OnFon into every product. Registers a Laravel mail transport and an
 SMS notification channel, so `Mail::send()` and `$user->notify()` keep working exactly as they
 do today.

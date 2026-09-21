@@ -10,7 +10,7 @@ beforeEach(function () {
     $url = getenv('NORIA_NOTIFY_LIVE_URL') ?: 'http://localhost:4800';
 
     if ($key === false || $key === '') {
-        test()->markTestSkipped('Set NORIA_NOTIFY_LIVE_KEY to run against a running Noria Notify instance.');
+        test()->markTestSkipped('Set NORIA_NOTIFY_LIVE_KEY to run against a running Noria Send instance.');
     }
 
     config()->set('noria-notify.key', $key);
@@ -122,7 +122,7 @@ it('delivers an sms through the running service', function () {
         test()->markTestSkipped('Set NORIA_NOTIFY_LIVE_MSISDN to a number you control.');
     }
 
-    $text = 'Noria Notify live check '.bin2hex(random_bytes(3));
+    $text = 'Noria Send live check '.bin2hex(random_bytes(3));
     $queued = $notify->sms()->send(SmsMessage::make($text)->payload($to));
 
     expect($queued['channel'])->toBe('sms')

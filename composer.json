@@ -1,6 +1,6 @@
 {
     "name": "norialabs/notify",
-    "description": "Laravel SDK, mail transport and SMS notification channel for Noria Notify: send transactional email and SMS through one internal service instead of wiring a provider into every product.",
+    "description": "Laravel SDK, mail transport and SMS notification channel for Noria Send: send transactional email and SMS through one internal service instead of wiring a provider into every product.",
     "type": "library",
     "keywords": [
         "laravel",

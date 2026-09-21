@@ -27,7 +27,7 @@ class Notify
         protected readonly int $retries = 2,
     ) {
         if ($apiKey === '') {
-            throw new NotifyException('validation_error', 0, 'A Noria Notify API key is required');
+            throw new NotifyException('validation_error', 0, 'A Noria Send API key is required');
         }
     }
 

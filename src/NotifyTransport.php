@@ -45,7 +45,7 @@ class NotifyTransport extends AbstractTransport
         $original = $message->getOriginalMessage();
 
         if (! $original instanceof Message) {
-            throw new NotifyException('validation_error', 0, 'Noria Notify cannot send a raw MIME message');
+            throw new NotifyException('validation_error', 0, 'Noria Send cannot send a raw MIME message');
         }
 
         $email = MessageConverter::toEmail($original);
