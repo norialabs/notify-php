@@ -172,4 +172,6 @@ composer quality      # pint, phpstan level max, pest
 NORIA_SEND_LIVE_KEY=nm_live_… vendor/bin/pest tests/LiveTest.php
 ```
 
-The SMS case additionally needs `NORIA_SEND_LIVE_MSISDN` set to a number you control.
+That reaches `http://localhost:4800`, so it exercises a service you are running yourself. Set
+`NORIA_SEND_LIVE_URL` to aim it elsewhere. The SMS case additionally needs
+`NORIA_SEND_LIVE_MSISDN` set to a number you control, because it sends a real message.
