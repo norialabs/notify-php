@@ -1,6 +1,6 @@
 <?php
 
-namespace NoriaLabs\Notify\Notifications;
+namespace NoriaLabs\Send\Notifications;
 
 class SmsMessage
 {

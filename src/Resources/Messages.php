@@ -1,6 +1,6 @@
 <?php
 
-namespace NoriaLabs\Notify\Resources;
+namespace NoriaLabs\Send\Resources;
 
 class Messages extends Resource
 {
@@ -9,7 +9,7 @@ class Messages extends Resource
      */
     public function get(string $id): array
     {
-        return $this->notify->request('GET', '/v1/messages/'.rawurlencode($id));
+        return $this->send->request('GET', '/v1/messages/'.rawurlencode($id));
     }
 
     /**
@@ -18,7 +18,7 @@ class Messages extends Resource
      */
     public function list(array $filters = []): array
     {
-        return $this->notify->request('GET', '/v1/messages'.$this->notify->query($filters));
+        return $this->send->request('GET', '/v1/messages'.$this->send->query($filters));
     }
 
     /**
@@ -26,7 +26,7 @@ class Messages extends Resource
      */
     public function events(string $id): array
     {
-        return $this->notify->request('GET', '/v1/messages/'.rawurlencode($id).'/events');
+        return $this->send->request('GET', '/v1/messages/'.rawurlencode($id).'/events');
     }
 
     /**
@@ -34,7 +34,7 @@ class Messages extends Resource
      */
     public function cancel(string $id): array
     {
-        return $this->notify->request('POST', '/v1/messages/'.rawurlencode($id).'/cancel');
+        return $this->send->request('POST', '/v1/messages/'.rawurlencode($id).'/cancel');
     }
 
     /**
@@ -42,6 +42,6 @@ class Messages extends Resource
      */
     public function requeue(string $id): array
     {
-        return $this->notify->request('POST', '/v1/messages/'.rawurlencode($id).'/requeue');
+        return $this->send->request('POST', '/v1/messages/'.rawurlencode($id).'/requeue');
     }
 }

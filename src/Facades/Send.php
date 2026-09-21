@@ -1,17 +1,17 @@
 <?php
 
-namespace NoriaLabs\Notify\Facades;
+namespace NoriaLabs\Send\Facades;
 
 use Illuminate\Support\Facades\Facade;
-use NoriaLabs\Notify\Notify as Client;
-use NoriaLabs\Notify\Resources\Domains;
-use NoriaLabs\Notify\Resources\Emails;
-use NoriaLabs\Notify\Resources\Messages;
-use NoriaLabs\Notify\Resources\Senders;
-use NoriaLabs\Notify\Resources\Sms;
-use NoriaLabs\Notify\Resources\Suppressions;
-use NoriaLabs\Notify\Resources\Templates;
-use NoriaLabs\Notify\Resources\Webhooks;
+use NoriaLabs\Send\Resources\Domains;
+use NoriaLabs\Send\Resources\Emails;
+use NoriaLabs\Send\Resources\Messages;
+use NoriaLabs\Send\Resources\Senders;
+use NoriaLabs\Send\Resources\Sms;
+use NoriaLabs\Send\Resources\Suppressions;
+use NoriaLabs\Send\Resources\Templates;
+use NoriaLabs\Send\Resources\Webhooks;
+use NoriaLabs\Send\Send as Client;
 
 /**
  * @method static Emails emails()
@@ -25,7 +25,7 @@ use NoriaLabs\Notify\Resources\Webhooks;
  *
  * @see Client
  */
-class Notify extends Facade
+class Send extends Facade
 {
     protected static function getFacadeAccessor(): string
     {

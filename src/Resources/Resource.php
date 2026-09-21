@@ -1,10 +1,10 @@
 <?php
 
-namespace NoriaLabs\Notify\Resources;
+namespace NoriaLabs\Send\Resources;
 
-use NoriaLabs\Notify\Notify;
+use NoriaLabs\Send\Send;
 
 abstract class Resource
 {
-    public function __construct(protected readonly Notify $notify) {}
+    public function __construct(protected readonly Send $send) {}
 }

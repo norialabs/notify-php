@@ -1,15 +1,15 @@
 <?php
 
-namespace NoriaLabs\Notify\Notifications;
+namespace NoriaLabs\Send\Notifications;
 
 use Illuminate\Notifications\Notification;
-use NoriaLabs\Notify\Exceptions\NotifyException;
-use NoriaLabs\Notify\Notify;
+use NoriaLabs\Send\Exceptions\SendException;
+use NoriaLabs\Send\Send;
 
-class NotifySmsChannel
+class SendSmsChannel
 {
     public function __construct(
-        protected readonly Notify $notify,
+        protected readonly Send $send,
         protected readonly bool $failOnSuppressed = false,
     ) {}
 
@@ -25,12 +25,12 @@ class NotifySmsChannel
         }
 
         /** @var SmsMessage|string $message */
-        $message = $notification->toNotifySms($notifiable); // @phpstan-ignore-line
+        $message = $notification->toSendSms($notifiable); // @phpstan-ignore-line
         $message = $message instanceof SmsMessage ? $message : SmsMessage::make((string) $message);
 
         try {
-            return $this->notify->sms()->send($message->payload($to), $message->key());
-        } catch (NotifyException $exception) {
+            return $this->send->sms()->send($message->payload($to), $message->key());
+        } catch (SendException $exception) {
             if ($exception->isSuppressed() && ! $this->failOnSuppressed) {
                 return null;
             }
@@ -42,7 +42,7 @@ class NotifySmsChannel
     protected function routeFor(mixed $notifiable, Notification $notification): ?string
     {
         if (is_object($notifiable) && method_exists($notifiable, 'routeNotificationFor')) {
-            $route = $notifiable->routeNotificationFor('notifySms', $notification);
+            $route = $notifiable->routeNotificationFor('sendSms', $notification);
 
             if (is_string($route) || is_int($route)) {
                 return (string) $route;

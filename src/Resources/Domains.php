@@ -1,6 +1,6 @@
 <?php
 
-namespace NoriaLabs\Notify\Resources;
+namespace NoriaLabs\Send\Resources;
 
 class Domains extends Resource
 {
@@ -9,7 +9,7 @@ class Domains extends Resource
      */
     public function create(string $name, bool $customReturnPath = true): array
     {
-        return $this->notify->request('POST', '/v1/domains', [
+        return $this->send->request('POST', '/v1/domains', [
             'name' => $name,
             'custom_return_path' => $customReturnPath,
         ]);
@@ -20,7 +20,7 @@ class Domains extends Resource
      */
     public function list(): array
     {
-        return $this->notify->request('GET', '/v1/domains');
+        return $this->send->request('GET', '/v1/domains');
     }
 
     /**
@@ -28,7 +28,7 @@ class Domains extends Resource
      */
     public function get(string $id): array
     {
-        return $this->notify->request('GET', '/v1/domains/'.rawurlencode($id));
+        return $this->send->request('GET', '/v1/domains/'.rawurlencode($id));
     }
 
     /**
@@ -36,11 +36,11 @@ class Domains extends Resource
      */
     public function verify(string $id): array
     {
-        return $this->notify->request('POST', '/v1/domains/'.rawurlencode($id).'/verify');
+        return $this->send->request('POST', '/v1/domains/'.rawurlencode($id).'/verify');
     }
 
     public function remove(string $id): void
     {
-        $this->notify->request('DELETE', '/v1/domains/'.rawurlencode($id));
+        $this->send->request('DELETE', '/v1/domains/'.rawurlencode($id));
     }
 }

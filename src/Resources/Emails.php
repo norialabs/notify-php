@@ -1,6 +1,6 @@
 <?php
 
-namespace NoriaLabs\Notify\Resources;
+namespace NoriaLabs\Send\Resources;
 
 class Emails extends Resource
 {
@@ -10,7 +10,7 @@ class Emails extends Resource
      */
     public function send(array $email, ?string $idempotencyKey = null): array
     {
-        return $this->notify->request(
+        return $this->send->request(
             'POST',
             '/v1/emails',
             $email,
@@ -24,6 +24,6 @@ class Emails extends Resource
      */
     public function sendBatch(array $emails): array
     {
-        return $this->notify->request('POST', '/v1/emails/batch', ['emails' => $emails]);
+        return $this->send->request('POST', '/v1/emails/batch', ['emails' => $emails]);
     }
 }

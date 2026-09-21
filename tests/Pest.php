@@ -1,5 +1,5 @@
 <?php
 
-use NoriaLabs\Notify\Tests\TestCase;
+use NoriaLabs\Send\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);

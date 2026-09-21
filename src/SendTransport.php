@@ -1,8 +1,8 @@
 <?php
 
-namespace NoriaLabs\Notify;
+namespace NoriaLabs\Send;
 
-use NoriaLabs\Notify\Exceptions\NotifyException;
+use NoriaLabs\Send\Exceptions\SendException;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\Address;
@@ -12,7 +12,7 @@ use Symfony\Component\Mime\Message;
 use Symfony\Component\Mime\MessageConverter;
 use Symfony\Component\Mime\Part\DataPart;
 
-class NotifyTransport extends AbstractTransport
+class SendTransport extends AbstractTransport
 {
     public const TAG_HEADER = 'X-Noria-Tag';
 
@@ -34,7 +34,7 @@ class NotifyTransport extends AbstractTransport
     ];
 
     public function __construct(
-        protected readonly Notify $notify,
+        protected readonly Send $send,
         protected readonly bool $failOnSuppressed = false,
     ) {
         parent::__construct();
@@ -45,7 +45,7 @@ class NotifyTransport extends AbstractTransport
         $original = $message->getOriginalMessage();
 
         if (! $original instanceof Message) {
-            throw new NotifyException('validation_error', 0, 'Noria Send cannot send a raw MIME message');
+            throw new SendException('validation_error', 0, 'Noria Send cannot send a raw MIME message');
         }
 
         $email = MessageConverter::toEmail($original);
@@ -53,8 +53,8 @@ class NotifyTransport extends AbstractTransport
         $idempotencyKey = $this->headerValue($email, self::IDEMPOTENCY_HEADER);
 
         try {
-            $result = $this->notify->emails()->send($payload, $idempotencyKey);
-        } catch (NotifyException $exception) {
+            $result = $this->send->emails()->send($payload, $idempotencyKey);
+        } catch (SendException $exception) {
             if ($exception->isSuppressed() && ! $this->failOnSuppressed) {
                 return;
             }

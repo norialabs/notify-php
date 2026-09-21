@@ -1,5 +1,5 @@
 {
-    "name": "norialabs/notify",
+    "name": "norialabs/send",
     "description": "Laravel SDK, mail transport and SMS notification channel for Noria Send: send transactional email and SMS through one internal service instead of wiring a provider into every product.",
     "type": "library",
     "keywords": [
@@ -14,10 +14,10 @@
         "noria"
     ],
     "license": "MIT",
-    "homepage": "https://github.com/norialabs/notify",
+    "homepage": "https://github.com/norialabs/send",
     "support": {
-        "issues": "https://github.com/norialabs/notify/issues",
-        "source": "https://github.com/norialabs/notify"
+        "issues": "https://github.com/norialabs/send/issues",
+        "source": "https://github.com/norialabs/send"
     },
     "authors": [
         {
@@ -42,12 +42,12 @@
     },
     "autoload": {
         "psr-4": {
-            "NoriaLabs\\Notify\\": "src/"
+            "NoriaLabs\\Send\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "NoriaLabs\\Notify\\Tests\\": "tests/"
+            "NoriaLabs\\Send\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -65,10 +65,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "NoriaLabs\\Notify\\Providers\\NotifyServiceProvider"
+                "NoriaLabs\\Send\\Providers\\SendServiceProvider"
             ],
             "aliases": {
-                "Notify": "NoriaLabs\\Notify\\Facades\\Notify"
+                "Send": "NoriaLabs\\Send\\Facades\\Send"
             }
         }
     },

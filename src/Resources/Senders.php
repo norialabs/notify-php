@@ -1,6 +1,6 @@
 <?php
 
-namespace NoriaLabs\Notify\Resources;
+namespace NoriaLabs\Send\Resources;
 
 class Senders extends Resource
 {
@@ -9,7 +9,7 @@ class Senders extends Resource
      */
     public function create(string $senderId, string $channel = 'sms'): array
     {
-        return $this->notify->request('POST', '/v1/senders', ['sender_id' => $senderId, 'channel' => $channel]);
+        return $this->send->request('POST', '/v1/senders', ['sender_id' => $senderId, 'channel' => $channel]);
     }
 
     /**
@@ -17,7 +17,7 @@ class Senders extends Resource
      */
     public function list(): array
     {
-        return $this->notify->request('GET', '/v1/senders');
+        return $this->send->request('GET', '/v1/senders');
     }
 
     /**
@@ -25,11 +25,11 @@ class Senders extends Resource
      */
     public function get(string $id): array
     {
-        return $this->notify->request('GET', '/v1/senders/'.rawurlencode($id));
+        return $this->send->request('GET', '/v1/senders/'.rawurlencode($id));
     }
 
     public function remove(string $id): void
     {
-        $this->notify->request('DELETE', '/v1/senders/'.rawurlencode($id));
+        $this->send->request('DELETE', '/v1/senders/'.rawurlencode($id));
     }
 }

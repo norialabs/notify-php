@@ -1,11 +1,11 @@
 <?php
 
-namespace NoriaLabs\Notify\Exceptions;
+namespace NoriaLabs\Send\Exceptions;
 
 use RuntimeException;
 use Throwable;
 
-class NotifyException extends RuntimeException
+class SendException extends RuntimeException
 {
     /**
      * @param  array<array-key, mixed>|null  $details

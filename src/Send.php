@@ -1,21 +1,21 @@
 <?php
 
-namespace NoriaLabs\Notify;
+namespace NoriaLabs\Send;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\PendingRequest;
-use NoriaLabs\Notify\Exceptions\NotifyException;
-use NoriaLabs\Notify\Resources\Domains;
-use NoriaLabs\Notify\Resources\Emails;
-use NoriaLabs\Notify\Resources\Messages;
-use NoriaLabs\Notify\Resources\Senders;
-use NoriaLabs\Notify\Resources\Sms;
-use NoriaLabs\Notify\Resources\Suppressions;
-use NoriaLabs\Notify\Resources\Templates;
-use NoriaLabs\Notify\Resources\Webhooks;
+use NoriaLabs\Send\Exceptions\SendException;
+use NoriaLabs\Send\Resources\Domains;
+use NoriaLabs\Send\Resources\Emails;
+use NoriaLabs\Send\Resources\Messages;
+use NoriaLabs\Send\Resources\Senders;
+use NoriaLabs\Send\Resources\Sms;
+use NoriaLabs\Send\Resources\Suppressions;
+use NoriaLabs\Send\Resources\Templates;
+use NoriaLabs\Send\Resources\Webhooks;
 
-class Notify
+class Send
 {
     public const DEFAULT_BASE_URL = 'https://send.noria.co.ke';
 
@@ -27,7 +27,7 @@ class Notify
         protected readonly int $retries = 2,
     ) {
         if ($apiKey === '') {
-            throw new NotifyException('validation_error', 0, 'A Noria Send API key is required');
+            throw new SendException('validation_error', 0, 'A Noria Send API key is required');
         }
     }
 
@@ -92,7 +92,7 @@ class Notify
                 $response = $this->pending($headers, $body !== null)
                     ->send($method, $this->url($path), $body === null ? [] : ['json' => $body]);
             } catch (ConnectionException $exception) {
-                $last = NotifyException::network($exception->getMessage(), $exception);
+                $last = SendException::network($exception->getMessage(), $exception);
 
                 continue;
             }
@@ -108,14 +108,14 @@ class Notify
                 return $decoded;
             }
 
-            $last = NotifyException::fromResponse($response->status(), $decoded);
+            $last = SendException::fromResponse($response->status(), $decoded);
 
             if (! $last->isRetryable()) {
                 throw $last;
             }
         }
 
-        throw $last ?? NotifyException::network('Request failed');
+        throw $last ?? SendException::network('Request failed');
     }
 
     /**

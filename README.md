@@ -1,30 +1,30 @@
 # Noria Send for Laravel
 
-Send transactional email and SMS through [Noria Send](https://github.com/norialabs/notify)
+Send transactional email and SMS through [Noria Send](https://github.com/norialabs/send)
 instead of wiring SES and OnFon into every product. Registers a Laravel mail transport and an
 SMS notification channel, so `Mail::send()` and `$user->notify()` keep working exactly as they
 do today.
 
 ```bash
-composer require norialabs/notify
+composer require norialabs/send
 ```
 
 This repository is a read-only split of `sdks/php` in
-[`norialabs/notify`](https://github.com/norialabs/notify). Open pull requests there; the mirror
+[`norialabs/send`](https://github.com/norialabs/send). Open pull requests there; the mirror
 is force-pushed on every release and anything committed here is lost.
 
 ```env
-MAIL_MAILER=notify
-NORIA_NOTIFY_KEY=nm_live_…
+MAIL_MAILER=send
+NORIA_SEND_KEY=nm_live_…
 ```
 
-`NORIA_NOTIFY_URL` defaults to `https://send.noria.co.ke`; set it to reach a local service or
+`NORIA_SEND_URL` defaults to `https://send.noria.co.ke`; set it to reach a local service or
 another instance.
 
 ```php
 // config/mail.php
 'mailers' => [
-    'notify' => ['transport' => 'notify'],
+    'send' => ['transport' => 'send'],
 ],
 ```
 
@@ -38,7 +38,7 @@ SMS arrives as a notification channel, which is how Laravel expects to send it.
 
 ```php
 use Illuminate\Notifications\Notification;
-use NoriaLabs\Notify\Notifications\SmsMessage;
+use NoriaLabs\Send\Notifications\SmsMessage;
 
 class OtpIssued extends Notification
 {
@@ -46,10 +46,10 @@ class OtpIssued extends Notification
 
     public function via($notifiable): array
     {
-        return ['notify-sms'];
+        return ['send-sms'];
     }
 
-    public function toNotifySms($notifiable): SmsMessage
+    public function toSendSms($notifiable): SmsMessage
     {
         return SmsMessage::make("Your code is {$this->code}")
             ->sender('NORIA')
@@ -62,13 +62,13 @@ class OtpIssued extends Notification
 The notifiable says where it goes:
 
 ```php
-public function routeNotificationForNotifySms(): string
+public function routeNotificationForSendSms(): string
 {
     return $this->phone;
 }
 ```
 
-`toNotifySms()` may also return a plain string. To send a stored template instead of a body,
+`toSendSms()` may also return a plain string. To send a stored template instead of a body,
 use `SmsMessage::make()->template('otp', ['code' => $code])`.
 
 ## Beyond the transport
@@ -76,17 +76,17 @@ use `SmsMessage::make()->template('otp', ['code' => $code])`.
 The client is bound in the container and available as a facade, grouped by resource.
 
 ```php
-use NoriaLabs\Notify\Facades\Notify;
+use NoriaLabs\Send\Facades\Send;
 
-Notify::sms()->send(['from' => 'NORIA', 'to' => '0712345678', 'text' => 'Your code is 482913']);
-Notify::domains()->create('norialabs.com');       // returns the DNS records to publish
-Notify::senders()->create('NORIA');               // registered pending approval
-Notify::templates()->upsert(['slug' => 'otp', 'channel' => 'sms', 'text' => 'Code {{code}}']);
-Notify::suppressions()->add('0712345678', 'sms', 'unsubscribe');
-Notify::suppressions()->has('0712345678', 'sms');
-Notify::messages()->list(['channel' => 'sms', 'status' => 'failed']);
-Notify::messages()->events($messageId);
-Notify::messages()->requeue($messageId);
+Send::sms()->send(['from' => 'NORIA', 'to' => '0712345678', 'text' => 'Your code is 482913']);
+Send::domains()->create('norialabs.com');       // returns the DNS records to publish
+Send::senders()->create('NORIA');               // registered pending approval
+Send::templates()->upsert(['slug' => 'otp', 'channel' => 'sms', 'text' => 'Code {{code}}']);
+Send::suppressions()->add('0712345678', 'sms', 'unsubscribe');
+Send::suppressions()->has('0712345678', 'sms');
+Send::messages()->list(['channel' => 'sms', 'status' => 'failed']);
+Send::messages()->events($messageId);
+Send::messages()->requeue($messageId);
 ```
 
 Each accessor returns a typed resource object, so PHPStan resolves the methods on it without a
@@ -97,15 +97,15 @@ hand-maintained `@method` list.
 Set headers on a mailable; the transport strips them and maps them onto the API.
 
 ```php
-use NoriaLabs\Notify\NotifyTransport;
+use NoriaLabs\Send\SendTransport;
 
 Mail::html($body, function ($message) {
     $message->to($user->email)->subject('Your sign-in link');
 
     $headers = $message->getHeaders();
-    $headers->addTextHeader(NotifyTransport::TAG_HEADER.'-product', 'zana');
-    $headers->addTextHeader(NotifyTransport::IDEMPOTENCY_HEADER, "signin-{$token->id}");
-    $headers->addTextHeader(NotifyTransport::SCHEDULE_HEADER, now()->addHour()->toIso8601String());
+    $headers->addTextHeader(SendTransport::TAG_HEADER.'-product', 'zana');
+    $headers->addTextHeader(SendTransport::IDEMPOTENCY_HEADER, "signin-{$token->id}");
+    $headers->addTextHeader(SendTransport::SCHEDULE_HEADER, now()->addHour()->toIso8601String());
 });
 ```
 
@@ -122,15 +122,15 @@ Any other custom header is passed through to the message itself.
 ## Suppressed recipients
 
 By default a send to a suppressed address or number is a no-op rather than an exception, so one
-opt-out cannot fail a queued job or a batch notification. Set `NORIA_NOTIFY_FAIL_ON_SUPPRESSED`
-to raise `NotifyException` instead.
+opt-out cannot fail a queued job or a batch notification. Set `NORIA_SEND_FAIL_ON_SUPPRESSED`
+to raise `SendException` instead.
 
 ## Webhooks
 
 ```php
-use NoriaLabs\Notify\WebhookVerifier;
+use NoriaLabs\Send\WebhookVerifier;
 
-Route::post('/webhooks/notify', function (Request $request, WebhookVerifier $verifier) {
+Route::post('/webhooks/send', function (Request $request, WebhookVerifier $verifier) {
     $event = $verifier->verify($request->getContent(), $request->header('Noria-Signature', ''));
 
     // $event['data']['channel'] is email or sms
@@ -138,7 +138,7 @@ Route::post('/webhooks/notify', function (Request $request, WebhookVerifier $ver
 });
 ```
 
-Set `NORIA_NOTIFY_WEBHOOK_SECRET` to the secret shown once when the endpoint was created.
+Set `NORIA_SEND_WEBHOOK_SECRET` to the secret shown once when the endpoint was created.
 
 ## Requirements
 
@@ -156,7 +156,7 @@ composer quality      # pint, phpstan level max, pest
 `tests/LiveTest.php` runs against a real instance and is skipped unless you point it at one:
 
 ```bash
-NORIA_NOTIFY_LIVE_KEY=nm_live_… vendor/bin/pest tests/LiveTest.php
+NORIA_SEND_LIVE_KEY=nm_live_… vendor/bin/pest tests/LiveTest.php
 ```
 
-The SMS case additionally needs `NORIA_NOTIFY_LIVE_MSISDN` set to a number you control.
+The SMS case additionally needs `NORIA_SEND_LIVE_MSISDN` set to a number you control.
