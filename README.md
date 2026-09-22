@@ -151,7 +151,15 @@ Route::post('/webhooks/send', function (Request $request, WebhookVerifier $verif
 });
 ```
 
+An interrupted send is retried by the client, and the client attaches an idempotency key of its
+own so the retry is a replay rather than a second message. Pass your own key when you want
+that guarantee to span your retries too, not only the SDK's.
+
 Set `NORIA_SEND_WEBHOOK_SECRET` to the secret shown once when the endpoint was created.
+
+Delivery is at-least-once: a retry or a provider redelivery can bring the same event twice.
+`$event['id']` — the `Noria-Event-Id` header — is stable across both, so record it and ignore an id
+you have already handled.
 
 ## Requirements
 

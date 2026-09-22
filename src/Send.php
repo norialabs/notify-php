@@ -6,9 +6,11 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\PendingRequest;
 use NoriaLabs\Send\Exceptions\SendException;
+use NoriaLabs\Send\Resources\ApiKeys;
 use NoriaLabs\Send\Resources\Domains;
 use NoriaLabs\Send\Resources\Emails;
 use NoriaLabs\Send\Resources\Messages;
+use NoriaLabs\Send\Resources\Projects;
 use NoriaLabs\Send\Resources\Senders;
 use NoriaLabs\Send\Resources\Sms;
 use NoriaLabs\Send\Resources\Suppressions;
@@ -71,6 +73,19 @@ class Send
         return new Webhooks($this);
     }
 
+    public function projects(): Projects
+    {
+        return new Projects($this);
+    }
+
+    public function apiKeys(): ApiKeys
+    {
+        return new ApiKeys($this);
+    }
+
+    // The only routes the service replays rather than re-runs.
+    protected const IDEMPOTENT_POSTS = ['/v1/emails', '/v1/emails/batch', '/v1/sms', '/v1/sms/batch'];
+
     /**
      * @param  array<string, mixed>|null  $body
      * @param  array<string, string>  $headers
@@ -80,6 +95,15 @@ class Send
     {
         $attempt = 0;
         $last = null;
+
+        $route = explode('?', $path)[0];
+        if ($method === 'POST' && in_array($route, self::IDEMPOTENT_POSTS, true) && ! isset($headers['Idempotency-Key'])) {
+            $headers['Idempotency-Key'] = 'sdk_'.bin2hex(random_bytes(16));
+        }
+
+        // A timeout says nothing about whether the service got it. Repeating that is only safe when
+        // the service will recognise the repeat.
+        $replayable = $method !== 'POST' || isset($headers['Idempotency-Key']);
 
         while ($attempt <= $this->retries) {
             if ($attempt > 0) {
@@ -93,6 +117,10 @@ class Send
                     ->send($method, $this->url($path), $body === null ? [] : ['json' => $body]);
             } catch (ConnectionException $exception) {
                 $last = SendException::network($exception->getMessage(), $exception);
+
+                if (! $replayable) {
+                    throw $last;
+                }
 
                 continue;
             }
@@ -111,6 +139,10 @@ class Send
             $last = SendException::fromResponse($response->status(), $decoded);
 
             if (! $last->isRetryable()) {
+                throw $last;
+            }
+
+            if (! $replayable && $last->errorCode !== 'rate_limited') {
                 throw $last;
             }
         }
