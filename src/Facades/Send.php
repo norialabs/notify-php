@@ -3,9 +3,11 @@
 namespace NoriaLabs\Send\Facades;
 
 use Illuminate\Support\Facades\Facade;
+use NoriaLabs\Send\Resources\ApiKeys;
 use NoriaLabs\Send\Resources\Domains;
 use NoriaLabs\Send\Resources\Emails;
 use NoriaLabs\Send\Resources\Messages;
+use NoriaLabs\Send\Resources\Projects;
 use NoriaLabs\Send\Resources\Senders;
 use NoriaLabs\Send\Resources\Sms;
 use NoriaLabs\Send\Resources\Suppressions;
@@ -22,6 +24,8 @@ use NoriaLabs\Send\Send as Client;
  * @method static Templates templates()
  * @method static Suppressions suppressions()
  * @method static Webhooks webhooks()
+ * @method static Projects projects()
+ * @method static ApiKeys apiKeys()
  *
  * @see Client
  */
