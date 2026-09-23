@@ -16,6 +16,10 @@ class WebhookVerifier
      */
     public function verify(string $payload, string $signature, ?int $now = null): array
     {
+        if ($this->secret === '') {
+            throw new SendException('unauthorized', 401, 'NORIA_SEND_WEBHOOK_SECRET is not set; refusing to trust any webhook');
+        }
+
         [$timestamp, $provided] = $this->parse($signature);
 
         if (abs(($now ?? time()) - $timestamp) > $this->toleranceSeconds) {

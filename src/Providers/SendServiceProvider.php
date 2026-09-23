@@ -2,7 +2,6 @@
 
 namespace NoriaLabs\Send\Providers;
 
-use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -12,7 +11,7 @@ use NoriaLabs\Send\Send;
 use NoriaLabs\Send\SendTransport;
 use NoriaLabs\Send\WebhookVerifier;
 
-class SendServiceProvider extends ServiceProvider implements DeferrableProvider
+class SendServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
@@ -53,11 +52,16 @@ class SendServiceProvider extends ServiceProvider implements DeferrableProvider
         ], 'noria-send-config');
 
         Mail::extend('noria', function (array $config): SendTransport {
+            /** @var array{timeout: int, retries: int} $defaults */
+            $defaults = $this->app->make('config')->get('noria-send');
+
             $client = isset($config['key']) && is_string($config['key']) && $config['key'] !== ''
                 ? new Send(
                     $this->app->make(Factory::class),
                     $config['key'],
                     is_string($config['url'] ?? null) ? $config['url'] : Send::DEFAULT_BASE_URL,
+                    is_int($config['timeout'] ?? null) ? $config['timeout'] : $defaults['timeout'],
+                    is_int($config['retries'] ?? null) ? $config['retries'] : $defaults['retries'],
                 )
                 : $this->app->make(Send::class);
 
@@ -68,13 +72,5 @@ class SendServiceProvider extends ServiceProvider implements DeferrableProvider
         // not the provider, and from Laravel 13 the manager has no $app property.
         $app = $this->app;
         Notification::extend('send-sms', fn (): SendSmsChannel => $app->make(SendSmsChannel::class));
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    public function provides(): array
-    {
-        return [Send::class, SendSmsChannel::class, WebhookVerifier::class];
     }
 }

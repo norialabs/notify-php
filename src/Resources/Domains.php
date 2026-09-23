@@ -18,9 +18,9 @@ class Domains extends Resource
     /**
      * @return array<string, mixed>
      */
-    public function list(): array
+    public function list(?int $limit = null, ?string $cursor = null): array
     {
-        return $this->send->request('GET', '/v1/domains');
+        return $this->send->request('GET', '/v1/domains'.$this->page($limit, $cursor));
     }
 
     /**

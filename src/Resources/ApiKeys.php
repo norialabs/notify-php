@@ -27,9 +27,9 @@ class ApiKeys extends Resource
     /**
      * @return array<string, mixed>
      */
-    public function list(): array
+    public function list(?int $limit = null, ?string $cursor = null): array
     {
-        return $this->send->request('GET', '/v1/api-keys');
+        return $this->send->request('GET', '/v1/api-keys'.$this->page($limit, $cursor));
     }
 
     public function revoke(string $id): void

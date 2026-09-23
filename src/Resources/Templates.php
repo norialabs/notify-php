@@ -16,9 +16,12 @@ class Templates extends Resource
     /**
      * @return array<string, mixed>
      */
-    public function list(): array
+    public function list(?int $limit = null, ?string $cursor = null, ?string $channel = null): array
     {
-        return $this->send->request('GET', '/v1/templates');
+        return $this->send->request(
+            'GET',
+            '/v1/templates'.$this->send->query(['limit' => $limit, 'cursor' => $cursor, 'channel' => $channel]),
+        );
     }
 
     /**

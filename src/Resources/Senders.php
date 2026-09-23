@@ -15,9 +15,9 @@ class Senders extends Resource
     /**
      * @return array<string, mixed>
      */
-    public function list(): array
+    public function list(?int $limit = null, ?string $cursor = null): array
     {
-        return $this->send->request('GET', '/v1/senders');
+        return $this->send->request('GET', '/v1/senders'.$this->page($limit, $cursor));
     }
 
     /**

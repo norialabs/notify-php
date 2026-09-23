@@ -30,7 +30,7 @@ class SendTransport extends AbstractTransport
     protected const RESERVED_HEADERS = [
         'from', 'to', 'cc', 'bcc', 'reply-to', 'subject', 'sender',
         'mime-version', 'content-type', 'content-transfer-encoding',
-        'date', 'message-id', 'return-path',
+        'date', 'message-id', 'return-path', 'received',
     ];
 
     public function __construct(
@@ -176,7 +176,7 @@ class SendTransport extends AbstractTransport
         foreach ($this->allHeaders($email) as $header) {
             $name = strtolower($header->getName());
 
-            if (in_array($name, self::RESERVED_HEADERS, true) || str_starts_with($name, 'x-noria-')) {
+            if (in_array($name, self::RESERVED_HEADERS, true) || str_starts_with($name, 'x-noria-') || str_starts_with($name, 'x-ses-')) {
                 continue;
             }
 
@@ -218,8 +218,12 @@ class SendTransport extends AbstractTransport
 
         $decoded = json_decode($raw, true);
 
+        if (! is_array($decoded)) {
+            throw new SendException('validation_error', 0, self::VARIABLES_HEADER.' must be a JSON object');
+        }
+
         /** @var array<string, mixed> */
-        return is_array($decoded) ? $decoded : [];
+        return $decoded;
     }
 
     /**

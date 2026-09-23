@@ -20,9 +20,18 @@ class Webhooks extends Resource
     /**
      * @return array<string, mixed>
      */
-    public function list(): array
+    public function list(?int $limit = null, ?string $cursor = null): array
     {
-        return $this->send->request('GET', '/v1/webhook-endpoints');
+        return $this->send->request('GET', '/v1/webhook-endpoints'.$this->page($limit, $cursor));
+    }
+
+    /**
+     * @param  array{url?: string, description?: string, event_types?: array<int, string>, enabled?: bool}  $changes
+     * @return array<string, mixed>
+     */
+    public function update(string $id, array $changes): array
+    {
+        return $this->send->request('PATCH', '/v1/webhook-endpoints/'.rawurlencode($id), $changes);
     }
 
     public function remove(string $id): void

@@ -22,8 +22,13 @@ class Emails extends Resource
      * @param  array<int, array<string, mixed>>  $emails
      * @return array<string, mixed>
      */
-    public function sendBatch(array $emails): array
+    public function sendBatch(array $emails, ?string $idempotencyKey = null): array
     {
-        return $this->send->request('POST', '/v1/emails/batch', ['emails' => $emails]);
+        return $this->send->request(
+            'POST',
+            '/v1/emails/batch',
+            ['emails' => $emails],
+            $idempotencyKey === null ? [] : ['Idempotency-Key' => $idempotencyKey],
+        );
     }
 }

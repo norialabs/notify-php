@@ -5,7 +5,7 @@
          colors="true"
          cacheDirectory=".phpunit.cache">
     <testsuites>
-        <testsuite name="Noria Mail">
+        <testsuite name="Noria Send">
             <directory>tests</directory>
         </testsuite>
     </testsuites>

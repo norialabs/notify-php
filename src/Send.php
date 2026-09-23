@@ -2,6 +2,7 @@
 
 namespace NoriaLabs\Send;
 
+use GuzzleHttp\Utils;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\PendingRequest;
@@ -21,6 +22,9 @@ class Send
 {
     public const DEFAULT_BASE_URL = 'https://send.noria.co.ke';
 
+    /** @var callable|null */
+    protected $handler = null;
+
     public function __construct(
         protected readonly Factory $http,
         protected readonly string $apiKey,
@@ -30,6 +34,12 @@ class Send
     ) {
         if ($apiKey === '') {
             throw new SendException('validation_error', 0, 'A Noria Send API key is required');
+        }
+
+        $scheme = parse_url($baseUrl, PHP_URL_SCHEME);
+        $host = parse_url($baseUrl, PHP_URL_HOST);
+        if ($scheme !== 'https' && ! ($scheme === 'http' && in_array($host, ['localhost', '127.0.0.1', '[::1]'], true))) {
+            throw new SendException('validation_error', 0, 'The base URL must be https unless it points at this machine');
         }
     }
 
@@ -95,19 +105,20 @@ class Send
     {
         $attempt = 0;
         $last = null;
+        $retryAfter = 0;
 
         $route = explode('?', $path)[0];
         if ($method === 'POST' && in_array($route, self::IDEMPOTENT_POSTS, true) && ! isset($headers['Idempotency-Key'])) {
             $headers['Idempotency-Key'] = 'sdk_'.bin2hex(random_bytes(16));
         }
 
-        // A timeout says nothing about whether the service got it. Repeating that is only safe when
-        // the service will recognise the repeat.
         $replayable = $method !== 'POST' || isset($headers['Idempotency-Key']);
 
         while ($attempt <= $this->retries) {
             if ($attempt > 0) {
-                usleep(min(2_000_000, 200_000 * (2 ** ($attempt - 1))));
+                // Jittered, or every queue worker that failed together retries together.
+                $backoff = (int) (min(2_000_000, 200_000 * (2 ** ($attempt - 1))) * (0.5 + mt_rand() / mt_getrandmax()));
+                usleep(max($retryAfter * 1_000_000, $backoff));
             }
 
             $attempt++;
@@ -129,6 +140,11 @@ class Send
                 return [];
             }
 
+            // The earlier attempt may have landed and only its answer been lost.
+            if ($response->status() === 404 && $method === 'DELETE' && $last?->errorCode === 'network_error') {
+                return [];
+            }
+
             /** @var array<string, mixed> $decoded */
             $decoded = $response->json() ?? [];
 
@@ -137,6 +153,7 @@ class Send
             }
 
             $last = SendException::fromResponse($response->status(), $decoded);
+            $retryAfter = min(60, max(0, (int) $response->header('Retry-After')));
 
             if (! $last->isRetryable()) {
                 throw $last;
@@ -165,7 +182,11 @@ class Send
      */
     protected function pending(array $headers, bool $hasBody): PendingRequest
     {
+        // One handler for this client's life keeps connections open between requests; fakes still sit above it.
+        $this->handler ??= Utils::chooseHandler();
+
         $request = $this->http
+            ->setHandler($this->handler)
             ->withToken($this->apiKey)
             ->acceptJson()
             ->withHeaders($headers)

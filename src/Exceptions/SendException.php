@@ -3,10 +3,14 @@
 namespace NoriaLabs\Send\Exceptions;
 
 use RuntimeException;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Throwable;
 
-class SendException extends RuntimeException
+// A transport exception, so a Laravel failover mailer moves on to its next mailer.
+class SendException extends RuntimeException implements TransportExceptionInterface
 {
+    private string $debug = '';
+
     /**
      * @param  array<array-key, mixed>|null  $details
      */
@@ -40,6 +44,16 @@ class SendException extends RuntimeException
             is_array($error['details'] ?? null) ? $error['details'] : null,
             is_string($error['request_id'] ?? null) ? $error['request_id'] : null,
         );
+    }
+
+    public function getDebug(): string
+    {
+        return $this->debug;
+    }
+
+    public function appendDebug(string $debug): void
+    {
+        $this->debug .= $debug;
     }
 
     public function isSuppressed(): bool

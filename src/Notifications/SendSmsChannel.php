@@ -42,10 +42,12 @@ class SendSmsChannel
     protected function routeFor(mixed $notifiable, Notification $notification): ?string
     {
         if (is_object($notifiable) && method_exists($notifiable, 'routeNotificationFor')) {
-            $route = $notifiable->routeNotificationFor('sendSms', $notification);
+            foreach (['send-sms', 'sendSms', self::class] as $name) {
+                $route = $notifiable->routeNotificationFor($name, $notification);
 
-            if (is_string($route) || is_int($route)) {
-                return (string) $route;
+                if (is_string($route) || is_int($route)) {
+                    return (string) $route;
+                }
             }
         }
 

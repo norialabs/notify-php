@@ -24,9 +24,17 @@ class Messages extends Resource
     /**
      * @return array<string, mixed>
      */
-    public function events(string $id): array
+    public function stats(?int $days = null, ?string $timezone = null): array
     {
-        return $this->send->request('GET', '/v1/messages/'.rawurlencode($id).'/events');
+        return $this->send->request('GET', '/v1/messages/stats'.$this->send->query(['days' => $days, 'timezone' => $timezone]));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function events(string $id, ?int $limit = null, ?string $cursor = null): array
+    {
+        return $this->send->request('GET', '/v1/messages/'.rawurlencode($id).'/events'.$this->page($limit, $cursor));
     }
 
     /**

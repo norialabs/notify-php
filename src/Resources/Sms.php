@@ -22,8 +22,13 @@ class Sms extends Resource
      * @param  array<int, array<string, mixed>>  $messages
      * @return array<string, mixed>
      */
-    public function sendBatch(array $messages): array
+    public function sendBatch(array $messages, ?string $idempotencyKey = null): array
     {
-        return $this->send->request('POST', '/v1/sms/batch', ['messages' => $messages]);
+        return $this->send->request(
+            'POST',
+            '/v1/sms/batch',
+            ['messages' => $messages],
+            $idempotencyKey === null ? [] : ['Idempotency-Key' => $idempotencyKey],
+        );
     }
 }

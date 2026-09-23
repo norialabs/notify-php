@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use NoriaLabs\Send\Exceptions\SendException;
 use NoriaLabs\Send\Notifications\SmsMessage;
+use NoriaLabs\Send\Providers\SendServiceProvider;
 use NoriaLabs\Send\Send;
 use NoriaLabs\Send\SendTransport;
 use NoriaLabs\Send\WebhookVerifier;
@@ -315,4 +316,95 @@ it('builds an sms template payload without a body', function () {
         'template' => 'otp',
         'variables' => ['code' => '482913'],
     ]);
+});
+
+it('sends an on-demand sms routed by the channel name', function () {
+    Http::fake(['*' => Http::response(['id' => 'msg_01sms', 'object' => 'sms', 'status' => 'queued'], 202)]);
+
+    NotificationFacade::route('send-sms', '0712000042')->notify(new PlainOtp);
+
+    expect(sentPayload())->toBe(['to' => '0712000042', 'text' => 'Your code is 000111']);
+});
+
+it('is not deferred, so the mailer and channel exist during a web request', function () {
+    expect((new SendServiceProvider(app()))->isDeferred())->toBeFalse();
+});
+
+it('refuses to verify anything without a webhook secret', function () {
+    $payload = '{"id":"evt_1"}';
+    $timestamp = time();
+    $signature = "t={$timestamp},v1=".hash_hmac('sha256', "{$timestamp}.{$payload}", '');
+
+    (new WebhookVerifier(''))->verify($payload, $signature);
+})->throws(SendException::class, 'NORIA_SEND_WEBHOOK_SECRET is not set');
+
+it('fails over to the next mailer when the API is unreachable', function () {
+    Http::fake(['*' => Http::response(['error' => ['code' => 'internal_error', 'message' => 'down']], 500)]);
+    config()->set('noria-send.retries', 0);
+    config()->set('mail.mailers.array', ['transport' => 'array']);
+    config()->set('mail.mailers.failover', ['transport' => 'failover', 'mailers' => ['noria', 'array']]);
+    app()->forgetInstance(Send::class);
+
+    Mail::mailer('failover')->raw('body', fn ($message) => $message->to('a@example.test')->subject('s'));
+
+    expect(Http::recorded())->toHaveCount(1);
+});
+
+it('pages any list', function () {
+    Http::fake(['*' => Http::response(['object' => 'list', 'data' => [], 'next_cursor' => null])]);
+
+    app(Send::class)->domains()->list(10, 'abc');
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://send.noria.test/v1/domains?limit=10&cursor=abc');
+});
+
+it('refuses plain http to anywhere but this machine', function () {
+    new Send(app(Factory::class), 'nm_test_x', 'http://send.example.com');
+})->throws(SendException::class, 'must be https');
+
+it('only calls routes the published spec has', function () {
+    $root = dirname(__DIR__, 3);
+    $spec = json_decode((string) file_get_contents($root.'/packages/contract/openapi.json'), true);
+
+    $published = [];
+    foreach ($spec['paths'] as $path => $operations) {
+        foreach (array_keys($operations) as $method) {
+            $published[] = strtoupper($method).' '.preg_replace('/\{[^}]+\}/', '{}', $path);
+        }
+    }
+
+    $called = [];
+    foreach (glob($root.'/sdks/php/src/Resources/*.php') as $file) {
+        preg_match_all(
+            "/request\\(\\s*'(GET|POST|PATCH|DELETE)',\\s*'([^']*)'((?:\\s*\\.\\s*rawurlencode\\(\\\$\\w+\\)(?:\\s*\\.\\s*'[^']*')?)*)/",
+            (string) file_get_contents($file),
+            $matches,
+            PREG_SET_ORDER,
+        );
+        foreach ($matches as [, $method, $head, $tail]) {
+            $rest = preg_replace('/\\s*\\.\\s*rawurlencode\\(\\$\\w+\\)/', '{}', $tail);
+            $called[] = $method.' '.$head.preg_replace("/\\s*\\.\\s*'([^']*)'/", '$1', (string) $rest);
+        }
+    }
+
+    expect($called)->not->toBeEmpty()
+        ->and(array_values(array_diff($called, $published)))->toBe([]);
+});
+
+it('updates a webhook with only the fields it is given', function () {
+    Http::fake(['*' => Http::response(['id' => 'we_1'])]);
+
+    app(Send::class)->webhooks()->update('we_1', ['enabled' => false]);
+
+    Http::assertSent(fn (Request $request): bool => $request->method() === 'PATCH'
+        && $request->url() === 'https://send.noria.test/v1/webhook-endpoints/we_1'
+        && $request->data() === ['enabled' => false]);
+});
+
+it('sends a batch under a caller chosen idempotency key', function () {
+    Http::fake(['*' => Http::response(['object' => 'list', 'data' => []], 202)]);
+
+    app(Send::class)->sms()->sendBatch([['to' => '0712000001', 'text' => 'hi']], 'batch-1');
+
+    Http::assertSent(fn (Request $request): bool => $request->header('Idempotency-Key') === ['batch-1']);
 });
